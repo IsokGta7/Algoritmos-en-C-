@@ -1,85 +1,80 @@
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <algorithm>
-#include <numeric>
-using namespace std;
-using namespace std::chrono;
+/**
+ * @file MergeSort.cpp
+ * @brief Implementación de Merge Sort y medición de rendimiento con distintos patrones.
+ *
+ * Complejidad: O(n log n) en todos los casos al dividir y combinar subarreglos.
+ * Se prueban tamaños crecientes y se reportan los tiempos en microsegundos.
+ */
 
-void merge(vector<int>& arr, int l, int m, int r) {
-    int n1 = m - l + 1;
-    int n2 = r - m;
-    vector<int> L(n1), R(n2);
-    
-    for (int i = 0; i < n1; i++)
-        L[i] = arr[l + i];
-    for (int j = 0; j < n2; j++)
-        R[j] = arr[m + 1 + j];
-    
-    int i = 0, j = 0, k = l;
-    while (i < n1 && j < n2) {
-        if (L[i] <= R[j]) {
-            arr[k] = L[i];
-            i++;
-        } else {
-            arr[k] = R[j];
-            j++;
-        }
-        k++;
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "sorting_utils.h"
+
+// Combina dos subarreglos ordenados en un rango [l, r].
+void merge(std::vector<int>& arr, int l, int m, int r) {
+    const int n1 = m - l + 1;
+    const int n2 = r - m;
+    std::vector<int> left(n1), right(n2);
+
+    for (int i = 0; i < n1; i++) {
+        left[i] = arr[l + i];
     }
-    
+    for (int j = 0; j < n2; j++) {
+        right[j] = arr[m + 1 + j];
+    }
+
+    int i = 0;
+    int j = 0;
+    int k = l;
+    while (i < n1 && j < n2) {
+        if (left[i] <= right[j]) {
+            arr[k] = left[i];
+            ++i;
+        } else {
+            arr[k] = right[j];
+            ++j;
+        }
+        ++k;
+    }
+
     while (i < n1) {
-        arr[k] = L[i];
-        i++;
-        k++;
+        arr[k++] = left[i++];
     }
     while (j < n2) {
-        arr[k] = R[j];
-        j++;
-        k++;
+        arr[k++] = right[j++];
     }
 }
 
-void mergeSort(vector<int>& arr, int l, int r) {
-    if (l >= r) return;
-    int m = l + (r - l) / 2;
+// Ordena el vector usando recursividad para dividir y conquistar.
+void mergeSort(std::vector<int>& arr, int l, int r) {
+    if (l >= r) {
+        return;
+    }
+    const int m = l + (r - l) / 2;
     mergeSort(arr, l, m);
     mergeSort(arr, m + 1, r);
     merge(arr, l, m, r);
 }
 
-vector<int> generateArray(int size, string type) {
-    vector<int> arr(size);
-    if (type == "ordenado") {
-        iota(arr.begin(), arr.end(), 0);
-    } else if (type == "inverso") {
-        iota(arr.begin(), arr.end(), 1);
-        reverse(arr.begin(), arr.end());
-    } else { // Random (average case)
-        srand((unsigned)time(0));
-        generate(arr.begin(), arr.end(), []() { return rand() % 10000; });
-    }
-    return arr;
-}
-
 int main() {
-    vector<string> types = {"ordenado", "random", "inverso"};
-    int sizes[] = {10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 55000}; // Example sizes
-    
-    for (string type : types) {
-        cout << "Tipo: " << type << "\n";
+    const std::vector<int> sizes{10'000, 20'000, 40'000, 60'000, 80'000, 100'000};
+    const std::vector<DataPattern> patterns{DataPattern::Sorted, DataPattern::Random, DataPattern::Reversed};
+
+    for (DataPattern pattern : patterns) {
+        std::cout << "Tipo: " << patternLabel(pattern) << '\n';
         for (int size : sizes) {
-            vector<int> arr = generateArray(size, type);
-            auto start = high_resolution_clock::now();
-            mergeSort(arr, 0, arr.size() - 1);
-            auto stop = high_resolution_clock::now();
-            auto duration = duration_cast<microseconds>(stop - start);
-            cout << "Tamanio: " << size << ", Tiempo: " << duration.count() << " microsegundos" << endl;
+            std::vector<int> arr = makeArray(size, pattern);
+            const auto start = Clock::now();
+            mergeSort(arr, 0, static_cast<int>(arr.size()) - 1);
+            const auto stop = Clock::now();
+            const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            std::cout << "Tamano: " << size << ", Tiempo: " << duration.count() << " microsegundos" << std::endl;
         }
-        cout << "\n";
+        std::cout << '\n';
     }
 
-    system("pause");
-    
     return 0;
 }
